@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.venv/
+single_chopper_data/
+*.png
+*.dat
+!edge_refinement/*.dat
