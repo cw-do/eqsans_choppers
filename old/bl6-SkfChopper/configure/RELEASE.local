@@ -1,0 +1,15 @@
+undefine SUPPORT
+undefine EXTENSIONS
+undefine BASEV4
+
+MODBUS=/home/controls/common/modbus/main
+SKFCHOP=/home/controls/common/skfchopper/main
+EPICS_BASE=/home/controls/common/base/main
+ASYN=/home/controls/common/asyn/main
+AUTOSAVE=/home/controls/common/autosave/main
+BUSY=/home/controls/common/busy/main
+CALC=/home/controls/common/calc/main
+DEVIOCSTATS=/home/controls/common/ioc-stats/main
+SNCSEQ=/home/controls/common/seq/rel2-2-9
+SSCAN=/home/controls/common/sscan/main
+STREAMDEVICE=/home/controls/common/streamdevice/main

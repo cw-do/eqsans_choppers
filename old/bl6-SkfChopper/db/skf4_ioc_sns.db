@@ -1,0 +1,1110 @@
+##########################################################
+# SNS IOC Status Template
+#
+# This simplfies use of the ioc-stats module by providing
+# a single template file that can be instantiated by
+# an IOC, which makes use of several ioc-stats database
+# template files. It also adds a summary alarm.
+#
+# Macros:
+# IOCNAME - The IOC base PV name (eg. ST01:CS:IOC_MotSim)
+#
+# Matt Pearson
+# Nov 2021
+#
+##########################################################
+
+# Used by Channel Access Security to determine access to this IOC.
+record(mbbo, "BL6:IocSts:ChopSkf4:ACCESS")
+{
+  field(DESC, "BL6:IocSts:ChopSkf4 Acc Mode")
+  field(PINI, "YES")
+  field(ZRST, "Running")
+  field(ZRSV, "NO_ALARM")
+  field(ONST, "Maintenance")
+  field(ONSV, "MINOR")
+  field(TWST, "Test")
+  field(TWSV, "MINOR")
+  field(THST, "OFFLINE")
+  field(THSV, "MAJOR")
+  info(autosaveFields, "VAL")
+}
+record(stringin, "BL6:IocSts:ChopSkf4:STARTTOD")
+{
+    field(DESC, "Time and date of startup")
+    field(DTYP, "Soft Timestamp")
+    field(PINI, "YES")
+    field(INP, "@@%Y/%m/%d %H:%M:%S")
+}
+record(stringin, "BL6:IocSts:ChopSkf4:TOD")
+{
+    field(DESC, "Current time and date")
+    field(DTYP, "Soft Timestamp")
+    field(SCAN, "1 second")
+    field(INP, "@@%Y/%m/%d %H:%M:%S")
+}
+record(calcout, "BL6:IocSts:ChopSkf4:HEARTBEAT")
+{
+    field(DESC, "1 Hz counter since startup")
+    field(CALC, "(A<2147483647)?A+1:1")
+    field(SCAN, "1 second")
+    field(INPA, "BL6:IocSts:ChopSkf4:HEARTBEAT")
+}
+# if autosave is working, START_CNT creates a running count of 
+# number of times the IOC was started.
+record(calcout, "BL6:IocSts:ChopSkf4:START_CNT")
+{
+    field(DESC, "Increments at startup")
+    field(CALC, "A+1")
+    field(PINI, "YES")
+    field(INPA, "BL6:IocSts:ChopSkf4:START_CNT")
+    info(autosaveFields_pass0, "VAL")
+}
+#
+# Using an existing internal set of subroutines, this
+# PV updates the Access Security mechanism dynamically.
+# The .acf file is re-read.
+#
+record( sub, "BL6:IocSts:ChopSkf4:READACF")
+{
+    field( DESC, "BL6:IocSts:ChopSkf4 ACF Update")
+    field( INAM, "asSubInit")
+    field( SNAM, "asSubProcess")
+    field( BRSV, "INVALID")
+}
+record(sub, "BL6:IocSts:ChopSkf4:SYSRESET")
+{
+    alias("BL6:IocSts:ChopSkf4:SysReset")
+    field(DESC, "IOC Restart" )
+    field(SNAM, "rebootProc")
+    field(BRSV,"INVALID")
+    field(L,"1")
+}
+
+record(ai, "BL6:IocSts:ChopSkf4:CA_CLNT_CNT") {
+  field(DESC, "Number of CA Clients")
+  field(SCAN, "I/O Intr")
+  field(DTYP, "IOC stats")
+  field(INP, "@ca_clients")
+  field(HOPR, "200")
+  field(HIHI, "175")
+  field(HIGH, "100")
+  field(HHSV, "MAJOR")
+  field(HSV, "MINOR")
+  info(autosaveFields_pass0, "HOPR LOPR HIHI HIGH LOW LOLO HHSV HSV LSV LLSV")
+}
+
+record(ai, "BL6:IocSts:ChopSkf4:CA_CONN_CNT") {
+  field(DESC, "Number of CA Connections")
+  field(SCAN, "I/O Intr")
+  field(DTYP, "IOC stats")
+  field(INP, "@ca_connections")
+  field(HOPR, "5000")
+  field(HIHI, "4500")
+  field(HIGH, "4000")
+  field(HHSV, "MAJOR")
+  field(HSV, "MINOR")
+  info(autosaveFields_pass0, "HOPR LOPR HIHI HIGH LOW LOLO HHSV HSV LSV LLSV")
+}
+
+record(ai, "BL6:IocSts:ChopSkf4:RECORD_CNT") {
+  field(DESC, "Number of Records")
+  field(PINI, "YES")
+  field(DTYP, "IOC stats")
+  field(INP, "@records")
+}
+
+record(ai, "BL6:IocSts:ChopSkf4:FD_MAX") {
+  field(DESC, "Max File Descriptors")
+  field(PINI, "YES")
+  field(DTYP, "IOC stats")
+  field(INP, "@maxfd")
+}
+
+record(ai, "BL6:IocSts:ChopSkf4:FD_CNT") {
+  field(DESC, "Allocated File Descriptors")
+  field(SCAN, "I/O Intr")
+  field(DTYP, "IOC stats")
+  field(FLNK, "BL6:IocSts:ChopSkf4:FD_FREE  PP MS")
+  field(INP, "@fd")
+}
+
+record(calc, "BL6:IocSts:ChopSkf4:FD_FREE") {
+  field(DESC, "Available FDs")
+  field(CALC, "B>0?B-A:C")
+  field(INPA, "BL6:IocSts:ChopSkf4:FD_CNT  NPP MS")
+  field(INPB, "BL6:IocSts:ChopSkf4:FD_MAX  NPP MS")
+  field(INPC, "1000")
+  field(HOPR, "150")
+  field(LOLO, "5")
+  field(LOW, "20")
+  field(LLSV, "MAJOR")
+  field(LSV, "MINOR")
+  info(autosaveFields_pass0, "HOPR LOPR LOW LOLO LSV LLSV")
+}
+
+record(ai, "BL6:IocSts:ChopSkf4:SYS_CPU_LOAD") {
+  field(DESC, "System CPU Load")
+  field(SCAN, "I/O Intr")
+  field(DTYP, "IOC stats")
+  field(INP, "@sys_cpuload")
+  field(EGU, "%")
+  field(PREC, "1")
+  field(HOPR, "100")
+  field(HIHI, "80")
+  field(HIGH, "70")
+  field(HHSV, "MAJOR")
+  field(HSV, "MINOR")
+  info(autosaveFields_pass0, "HOPR LOPR HIHI HIGH LOW LOLO HHSV HSV LSV LLSV")
+}
+
+record(ai, "BL6:IocSts:ChopSkf4:IOC_CPU_LOAD") {
+  alias("BL6:IocSts:ChopSkf4:LOAD")
+  field(DESC, "IOC CPU Load")
+  field(SCAN, "I/O Intr")
+  field(DTYP, "IOC stats")
+  field(INP, "@ioc_cpuload")
+  field(EGU, "%")
+  field(PREC, "1")
+  field(HOPR, "100")
+  field(HIHI, "80")
+  field(HIGH, "70")
+  field(HHSV, "MAJOR")
+  field(HSV, "MINOR")
+  info(autosaveFields_pass0, "HOPR LOPR HIHI HIGH LOW LOLO HHSV HSV LSV LLSV")
+}
+
+record(ai, "BL6:IocSts:ChopSkf4:CPU_CNT") {
+  field(DESC, "Number of CPUs")
+  field(DTYP, "IOC stats")
+  field(INP, "@no_of_cpus")
+  field(PINI, "YES")
+}
+
+record(ai, "BL6:IocSts:ChopSkf4:SUSP_TASK_CNT") {
+  field(DESC, "Number Suspended Tasks")
+  field(SCAN, "I/O Intr")
+  field(DTYP, "IOC stats")
+  field(INP, "@suspended_tasks")
+  field(HIHI, "1")
+  field(HHSV, "MAJOR")
+  info(autosaveFields_pass0, "HOPR LOPR HIHI HIGH LOW LOLO HHSV HSV LSV LLSV")
+}
+
+record(ai, "BL6:IocSts:ChopSkf4:MEM_USED") {
+  field(DESC, "Allocated Memory")
+  field(SCAN, "I/O Intr")
+  field(DTYP, "IOC stats")
+  field(INP, "@allocated_bytes")
+  field(EGU, "byte")
+}
+
+record(ai, "BL6:IocSts:ChopSkf4:MEM_FREE") {
+  field(DESC, "Free Memory")
+  field(SCAN, "I/O Intr")
+  field(DTYP, "IOC stats")
+  field(INP, "@free_bytes")
+  field(EGU, "byte")
+  field(LLSV, "MAJOR")
+  field(LSV, "MINOR")
+  info(autosaveFields_pass0, "HOPR LOPR LOW LOLO LSV LLSV")
+}
+
+record(ai, "BL6:IocSts:ChopSkf4:MEM_MAX") {
+  field(DESC, "Maximum Memory")
+  field(SCAN, "I/O Intr")
+  field(DTYP, "IOC stats")
+  field(INP, "@total_bytes")
+  field(EGU, "byte")
+}
+
+record(ao, "BL6:IocSts:ChopSkf4:CA_UPD_TIME") {
+  field(DESC, "CA Check Update Period")
+  field(DTYP, "IOC stats")
+  field(OUT, "@ca_scan_rate")
+  field(EGU, "sec")
+  field(DRVH, "60")
+  field(DRVL, "1")
+  field(HOPR, "60")
+  field(VAL, "15")
+  field(PINI, "YES")
+}
+
+record(ao, "BL6:IocSts:ChopSkf4:FD_UPD_TIME") {
+  field(DESC, "FD Check Update Period")
+  field(DTYP, "IOC stats")
+  field(OUT, "@fd_scan_rate")
+  field(EGU, "sec")
+  field(DRVH, "60")
+  field(DRVL, "1")
+  field(HOPR, "60")
+  field(VAL, "20")
+  field(PINI, "YES")
+}
+
+record(ao, "BL6:IocSts:ChopSkf4:LOAD_UPD_TIME") {
+  field(DESC, "CPU Check Update Period")
+  field(DTYP, "IOC stats")
+  field(OUT, "@cpu_scan_rate")
+  field(EGU, "sec")
+  field(DRVH, "60")
+  field(DRVL, "1")
+  field(HOPR, "60")
+  field(VAL, "10")
+  field(PINI, "YES")
+}
+
+record(ao, "BL6:IocSts:ChopSkf4:MEM_UPD_TIME") {
+  field(DESC, "Memory Check Update Period")
+  field(DTYP, "IOC stats")
+  field(OUT, "@memory_scan_rate")
+  field(EGU, "sec")
+  field(DRVH, "60")
+  field(DRVL, "1")
+  field(HOPR, "60")
+  field(VAL, "10")
+  field(PINI, "YES")
+}
+
+record(stringin, "BL6:IocSts:ChopSkf4:ST_SCRIPT1") {
+  field(DESC, "Startup Script Part1")
+  field(DTYP, "IOC stats")
+  field(INP, "@startup_script_1")
+  field(PINI, "YES")
+}
+
+record(stringin, "BL6:IocSts:ChopSkf4:ST_SCRIPT2") {
+  field(DESC, "Startup Script Part2")
+  field(DTYP, "IOC stats")
+  field(INP, "@startup_script_2")
+  field(PINI, "YES")
+}
+
+record(waveform, "BL6:IocSts:ChopSkf4:ST_SCRIPT") {
+  field(DESC, "Startup Script")
+  field(DTYP, "IOC stats")
+  field(INP, "@startup_script")
+  field(NELM, "120")
+  field(FTVL, "CHAR")
+  field(PINI, "YES")
+}
+
+record(stringin, "BL6:IocSts:ChopSkf4:KERNEL_VERS") {
+  field(DESC, "Kernel Version")
+  field(DTYP, "IOC stats")
+  field(INP, "@kernel_ver")
+  field(PINI, "YES")
+}
+
+record(stringin, "BL6:IocSts:ChopSkf4:EPICS_VERS") {
+  field(DESC, "EPICS Version")
+  field(DTYP, "IOC stats")
+  field(INP, "@epics_ver")
+  field(PINI, "YES")
+}
+
+record(waveform, "BL6:IocSts:ChopSkf4:EPICS_VERSION") {
+  field(DESC, "EPICS Version")
+  field(DTYP, "IOC stats")
+  field(INP, "@epics_ver")
+  field(NELM, "120")
+  field(FTVL, "CHAR")
+  field(PINI, "YES")
+}
+
+record(stringin, "BL6:IocSts:ChopSkf4:HOSTNAME") {
+  field(DESC, "Host Name")
+  field(DTYP, "IOC stats")
+  field(INP, "@hostname")
+  field(PINI, "YES")
+}
+
+record(stringin, "BL6:IocSts:ChopSkf4:APP_DIR1") {
+  field(DESC, "Application Directory Part 1")
+  field(DTYP, "IOC stats")
+  field(INP, "@pwd1")
+  field(PINI, "YES")
+}
+
+record(stringin, "BL6:IocSts:ChopSkf4:APP_DIR2") {
+  field(DESC, "Application Directory Part 2")
+  field(DTYP, "IOC stats")
+  field(INP, "@pwd2")
+  field(PINI, "YES")
+}
+
+record(waveform, "BL6:IocSts:ChopSkf4:APP_DIR") {
+  field(DESC, "Application Directory")
+  field(DTYP, "IOC stats")
+  field(INP, "@pwd")
+  field(NELM, "160")
+  field(FTVL, "CHAR")
+  field(PINI, "YES")
+}
+
+record(stringin, "BL6:IocSts:ChopSkf4:UPTIME") {
+  field(DESC, "Elapsed Time since Start")
+  field(SCAN, "1 second")
+  field(DTYP, "IOC stats")
+  field(INP, "@up_time")
+  field(PINI, "YES")
+}
+
+record(stringin, "BL6:IocSts:ChopSkf4:ENGINEER") {
+  field(DESC, "Engineer")
+  field(DTYP, "IOC stats")
+  field(INP, "@engineer")
+  field(PINI, "YES")
+}
+
+record(stringin, "BL6:IocSts:ChopSkf4:LOCATION") {
+  field(DESC, "Location")
+  field(DTYP, "IOC stats")
+  field(INP, "@location")
+  field(PINI, "YES")
+}
+
+record(ai, "BL6:IocSts:ChopSkf4:PROCESS_ID") {
+  field(DESC, "Process ID")
+  field(PINI, "YES")
+  field(DTYP, "IOC stats")
+  field(INP, "@proc_id")
+}
+
+record(ai, "BL6:IocSts:ChopSkf4:PARENT_ID") {
+  field(DESC, "Parent Process ID")
+  field(PINI, "YES")
+  field(DTYP, "IOC stats")
+  field(INP, "@parent_proc_id")
+}
+
+record(ai, "BL6:IocSts:ChopSkf4:SCANONCE_Q_SIZE") {
+  field(DESC, "max # entries in IOC scanOnce queue")
+  field(DTYP, "IOC stats")
+  field(INP,  "@scanOnceQueueSize")
+  field(PINI, "YES")
+}
+record(ai, "BL6:IocSts:ChopSkf4:CB_Q_SIZE") {
+  field(DESC, "max # entries in IOC callback queues")
+  field(DTYP, "IOC stats")
+  field(INP,  "@cbQueueSize")
+  field(PINI, "YES")
+}
+
+record(ai, "BL6:IocSts:ChopSkf4:SCANONCE_Q_HIGH") {
+  field(DESC, "max # of elmts in IOC's scanOnce queue")
+  field(SCAN, "I/O Intr")
+  field(DTYP, "IOC stats")
+  field(INP,  "@scanOnceQueueHiWtrMrk")
+  field(PINI, "YES")
+  field(FLNK, "BL6:IocSts:ChopSkf4:SCANONCE_Q_HIGHPER")
+}
+
+record(calc, "BL6:IocSts:ChopSkf4:SCANONCE_Q_HIGHPER") {
+  field(DESC, "Max. usage of IOC's scanOnce queue")
+  field(INPA, "BL6:IocSts:ChopSkf4:SCANONCE_Q_HIGH NPP MS")
+  field(INPB, "BL6:IocSts:ChopSkf4:SCANONCE_Q_SIZE NPP MS")
+  field(CALC, "100*A/B")
+  field(LOPR, "0")
+  field(HOPR, "100")
+  field(EGU,  "%")
+}
+
+record(ai, "BL6:IocSts:ChopSkf4:SCANONCE_Q_USED") {
+  field(DESC, "# of entries in IOC's scanOnce queue")
+  field(SCAN, "I/O Intr")
+  field(DTYP, "IOC stats")
+  field(INP,  "@scanOnceQueueUsed")
+  field(PINI, "YES")
+  field(FLNK, "BL6:IocSts:ChopSkf4:SCANONCE_Q_USEDPER")
+}
+
+record(calc, "BL6:IocSts:ChopSkf4:SCANONCE_Q_USEDPER") {
+  field(DESC, "Percentage of IOC's scanOnce queue used")
+  field(INPA, "BL6:IocSts:ChopSkf4:SCANONCE_Q_USED NPP MS")
+  field(INPB, "BL6:IocSts:ChopSkf4:SCANONCE_Q_SIZE NPP MS")
+  field(CALC, "100*A/B")
+  field(LOPR, "0")
+  field(HOPR, "100")
+  field(EGU,  "%")
+}
+
+record(ai, "BL6:IocSts:ChopSkf4:SCANONCE_Q_OVERRUNS") {
+  field(DESC, "# of overruns of IOC's scanOnce queue")
+  field(SCAN, "I/O Intr")
+  field(DTYP, "IOC stats")
+  field(INP,  "@scanOnceQueueOverruns")
+  field(PINI, "YES")
+}
+
+record(ai, "BL6:IocSts:ChopSkf4:CBLOW_Q_HIGH") {
+  field(DESC, "max # of elmts in IOC's cbLow queue")
+  field(SCAN, "I/O Intr")
+  field(DTYP, "IOC stats")
+  field(INP,  "@cbLowQueueHiWtrMrk")
+  field(PINI, "YES")
+  field(FLNK, "BL6:IocSts:ChopSkf4:CBLOW_Q_HIGHPER")
+}
+
+record(calc, "BL6:IocSts:ChopSkf4:CBLOW_Q_HIGHPER") {
+  field(DESC, "Max. usage of IOC's cbLow queue")
+  field(INPA, "BL6:IocSts:ChopSkf4:CBLOW_Q_HIGH NPP MS")
+  field(INPB, "BL6:IocSts:ChopSkf4:CB_Q_SIZE NPP MS")
+  field(CALC, "100*A/B")
+  field(LOPR, "0")
+  field(HOPR, "100")
+  field(EGU,  "%")
+}
+
+record(ai, "BL6:IocSts:ChopSkf4:CBLOW_Q_USED") {
+  field(DESC, "# of entries in IOC's cbLow queue")
+  field(SCAN, "I/O Intr")
+  field(DTYP, "IOC stats")
+  field(INP,  "@cbLowQueueUsed")
+  field(PINI, "YES")
+  field(FLNK, "BL6:IocSts:ChopSkf4:CBLOW_Q_USEDPER")
+}
+
+record(calc, "BL6:IocSts:ChopSkf4:CBLOW_Q_USEDPER") {
+  field(DESC, "Percentage of IOC's cbLow queue used")
+  field(INPA, "BL6:IocSts:ChopSkf4:CBLOW_Q_USED NPP MS")
+  field(INPB, "BL6:IocSts:ChopSkf4:CB_Q_SIZE NPP MS")
+  field(CALC, "100*A/B")
+  field(LOPR, "0")
+  field(HOPR, "100")
+  field(EGU,  "%")
+}
+
+record(ai, "BL6:IocSts:ChopSkf4:CBLOW_Q_OVERRUNS") {
+  field(DESC, "# of overruns of IOC's cbLow queue")
+  field(SCAN, "I/O Intr")
+  field(DTYP, "IOC stats")
+  field(INP,  "@cbLowQueueOverruns")
+  field(PINI, "YES")
+}
+
+record(ai, "BL6:IocSts:ChopSkf4:CBMEDIUM_Q_HIGH") {
+  field(DESC, "max # of elmts in IOC's cbMedium queue")
+  field(SCAN, "I/O Intr")
+  field(DTYP, "IOC stats")
+  field(INP,  "@cbMediumQueueHiWtrMrk")
+  field(PINI, "YES")
+  field(FLNK, "BL6:IocSts:ChopSkf4:CBMEDIUM_Q_HIGHPER")
+}
+
+record(calc, "BL6:IocSts:ChopSkf4:CBMEDIUM_Q_HIGHPER") {
+  field(DESC, "Max. usage of IOC's cbMedium queue")
+  field(INPA, "BL6:IocSts:ChopSkf4:CBMEDIUM_Q_HIGH NPP MS")
+  field(INPB, "BL6:IocSts:ChopSkf4:CB_Q_SIZE NPP MS")
+  field(CALC, "100*A/B")
+  field(LOPR, "0")
+  field(HOPR, "100")
+  field(EGU,  "%")
+}
+
+record(ai, "BL6:IocSts:ChopSkf4:CBMEDIUM_Q_USED") {
+  field(DESC, "# of entries in IOC's cbMedium queue")
+  field(SCAN, "I/O Intr")
+  field(DTYP, "IOC stats")
+  field(INP,  "@cbMediumQueueUsed")
+  field(PINI, "YES")
+  field(FLNK, "BL6:IocSts:ChopSkf4:CBMEDIUM_Q_USEDPER")
+}
+
+record(calc, "BL6:IocSts:ChopSkf4:CBMEDIUM_Q_USEDPER") {
+  field(DESC, "Percentage of IOC's cbMedium queue used")
+  field(INPA, "BL6:IocSts:ChopSkf4:CBMEDIUM_Q_USED NPP MS")
+  field(INPB, "BL6:IocSts:ChopSkf4:CB_Q_SIZE NPP MS")
+  field(CALC, "100*A/B")
+  field(LOPR, "0")
+  field(HOPR, "100")
+  field(EGU,  "%")
+}
+
+record(ai, "BL6:IocSts:ChopSkf4:CBMEDIUM_Q_OVERRUNS") {
+  field(DESC, "# of overruns of IOC's cbMedium queue")
+  field(SCAN, "I/O Intr")
+  field(DTYP, "IOC stats")
+  field(INP,  "@cbMediumQueueOverruns")
+  field(PINI, "YES")
+}
+
+record(ai, "BL6:IocSts:ChopSkf4:CBHIGH_Q_HIGH") {
+  field(DESC, "max # of elmts in IOC's cbHigh queue")
+  field(SCAN, "I/O Intr")
+  field(DTYP, "IOC stats")
+  field(INP,  "@cbHighQueueHiWtrMrk")
+  field(PINI, "YES")
+  field(FLNK, "BL6:IocSts:ChopSkf4:CBHIGH_Q_HIGHPER")
+}
+
+record(calc, "BL6:IocSts:ChopSkf4:CBHIGH_Q_HIGHPER") {
+  field(DESC, "Max. usage of IOC's cbHigh queue")
+  field(INPA, "BL6:IocSts:ChopSkf4:CBHIGH_Q_HIGH NPP MS")
+  field(INPB, "BL6:IocSts:ChopSkf4:CB_Q_SIZE NPP MS")
+  field(CALC, "100*A/B")
+  field(LOPR, "0")
+  field(HOPR, "100")
+  field(EGU,  "%")
+}
+
+record(ai, "BL6:IocSts:ChopSkf4:CBHIGH_Q_USED") {
+  field(DESC, "# of entries in IOC's cbHigh queue")
+  field(SCAN, "I/O Intr")
+  field(DTYP, "IOC stats")
+  field(INP,  "@cbHighQueueUsed")
+  field(PINI, "YES")
+  field(FLNK, "BL6:IocSts:ChopSkf4:CBHIGH_Q_USEDPER")
+}
+
+record(calc, "BL6:IocSts:ChopSkf4:CBHIGH_Q_USEDPER") {
+  field(DESC, "Percentage of IOC's cbHigh queue used")
+  field(INPA, "BL6:IocSts:ChopSkf4:CBHIGH_Q_USED NPP MS")
+  field(INPB, "BL6:IocSts:ChopSkf4:CB_Q_SIZE NPP MS")
+  field(CALC, "100*A/B")
+  field(LOPR, "0")
+  field(HOPR, "100")
+  field(EGU,  "%")
+}
+
+record(ai, "BL6:IocSts:ChopSkf4:CBHIGH_Q_OVERRUNS") {
+  field(DESC, "# of overruns of IOC's cbHigh queue")
+  field(SCAN, "I/O Intr")
+  field(DTYP, "IOC stats")
+  field(INP,  "@cbHighQueueOverruns")
+  field(PINI, "YES")
+}
+
+record(ai, "BL6:IocSts:ChopSkf4:GTIM_TIME") {
+  field(DESC, "Gen Time Secs since 1990")
+  field(SCAN, "1 second")
+  field(DTYP, "General Time")
+  field(PREC, "3")
+  field(INP,  "@TIME")
+  field(EGU,  "sec")
+}
+
+record(bo, "BL6:IocSts:ChopSkf4:GTIM_RESET") {
+  field(DESC, "Gen Time Error Reset")
+  field(DTYP, "General Time")
+  field(OUT,  "@RSTERRCNT")
+  field(ZNAM, "Reset")
+  field(ONAM, "Reset")
+}
+
+record(longin, "BL6:IocSts:ChopSkf4:GTIM_ERR_CNT") {
+  field(DESC, "Gen Time Error Count")
+  field(DTYP, "General Time")
+  field(INP,  "@GETERRCNT")
+  field(SCAN, "1 second")
+  field(HIHI, "1")
+  field(HHSV, "MAJOR")
+}
+
+record(stringin, "BL6:IocSts:ChopSkf4:GTIM_CUR_SRC") {
+  field(DESC, "Gen Time Current Provider")
+  field(DTYP, "General Time")
+  field(INP,  "@BESTTCP")
+  field(SCAN, "1 second")
+}
+
+record(stringin, "BL6:IocSts:ChopSkf4:GTIM_EVT_SRC") {
+  field(DESC, "Gen Time Event Provider")
+  field(DTYP, "General Time")
+  field(INP,  "@BESTTEP")
+  field(SCAN, "1 second")
+}
+
+record(stringin, "BL6:IocSts:ChopSkf4:GTIM_HI_SRC") {
+  field(DESC, "Gen Time Highest Provider")
+  field(DTYP, "General Time")
+  field(INP,  "@TOPTCP")
+  field(SCAN, "1 second")
+}
+
+record(stringin, "BL6:IocSts:ChopSkf4:CA_ADDR_LIST") {
+  field(DESC, "EPICS_CA_ADDR_LIST")
+  field(DTYP, "IOC epics var")
+  field(INP, "@EPICS_CA_ADDR_LIST")
+  field(PINI, "YES")
+}
+
+record(stringin, "BL6:IocSts:ChopSkf4:CAS_INTF_ADDR") {
+  field(DESC, "EPICS_CAS_INTF_ADDR_LIST")
+  field(DTYP, "IOC epics var")
+  field(INP, "@EPICS_CAS_INTF_ADDR_LIST")
+  field(PINI, "YES")
+}
+
+record(stringin, "BL6:IocSts:ChopSkf4:CA_CONN_TIME") {
+  field(DESC, "EPICS_CA_CONN_TMO")
+  field(DTYP, "IOC epics var")
+  field(INP, "@EPICS_CA_CONN_TMO")
+  field(PINI, "YES")
+}
+
+record(stringin, "BL6:IocSts:ChopSkf4:CA_AUTO_ADDR") {
+  field(DESC, "EPICS_CA_AUTO_ADDR_LIST")
+  field(DTYP, "IOC epics var")
+  field(INP, "@EPICS_CA_AUTO_ADDR_LIST")
+  field(PINI, "YES")
+}
+
+record(stringin, "BL6:IocSts:ChopSkf4:CA_RPTR_PORT") {
+  field(DESC, "EPICS_CA_REPEATER_PORT")
+  field(DTYP, "IOC epics var")
+  field(INP, "@EPICS_CA_REPEATER_PORT")
+  field(PINI, "YES")
+}
+
+record(stringin, "BL6:IocSts:ChopSkf4:CA_SRVR_PORT") {
+  field(DESC, "EPICS_CA_SERVER_PORT")
+  field(DTYP, "IOC epics var")
+  field(INP, "@EPICS_CA_SERVER_PORT")
+  field(PINI, "YES")
+}
+
+record(stringin, "BL6:IocSts:ChopSkf4:CA_MAX_ARRAY") {
+  field(DESC, "EPICS_CA_MAX_ARRAY_BYTES")
+  field(DTYP, "IOC epics var")
+  field(INP, "@EPICS_CA_MAX_ARRAY_BYTES")
+  field(PINI, "YES")
+}
+
+record(stringin, "BL6:IocSts:ChopSkf4:CA_SRCH_TIME") {
+  field(DESC, "EPICS_CA_MAX_SEARCH_PERIOD")
+  field(DTYP, "IOC epics var")
+  field(INP, "@EPICS_CA_MAX_SEARCH_PERIOD")
+  field(PINI, "YES")
+}
+
+record(stringin, "BL6:IocSts:ChopSkf4:CA_BEAC_TIME") {
+  field(DESC, "EPICS_CA_BEACON_PERIOD")
+  field(DTYP, "IOC epics var")
+  field(INP, "@EPICS_CA_BEACON_PERIOD")
+  field(PINI, "YES")
+}
+
+record(stringin, "BL6:IocSts:ChopSkf4:TIMEZONE") {
+  field(DESC, "EPICS_TZ")
+  field(DTYP, "IOC epics var")
+  field(INP, "@EPICS_TZ")
+  field(PINI, "YES")
+}
+
+record(stringin, "BL6:IocSts:ChopSkf4:TS_NTP_INET") {
+  field(DESC, "EPICS_TS_NTP_INET")
+  field(DTYP, "IOC epics var")
+  field(INP, "@EPICS_TS_NTP_INET")
+  field(PINI, "YES")
+}
+
+record(stringin, "BL6:IocSts:ChopSkf4:IOC_LOG_PORT") {
+  field(DESC, "EPICS_IOC_LOG_PORT")
+  field(DTYP, "IOC epics var")
+  field(INP, "@EPICS_IOC_LOG_PORT")
+  field(PINI, "YES")
+}
+
+record(stringin, "BL6:IocSts:ChopSkf4:IOC_LOG_INET") {
+  field(DESC, "EPICS_IOC_LOG_INET")
+  field(DTYP, "IOC epics var")
+  field(INP, "@EPICS_IOC_LOG_INET")
+  field(PINI, "YES")
+}
+
+record(bo, "BL6:IocSts:ChopSkf4:HZ_01_MODE") {
+	field(DESC, "HZ_01 Mode")
+	field(DOL, "1")
+	field(PINI, "YES")
+	field(ZNAM, "Relative")
+	field(ONAM, "Absolute")
+}
+record(sub, "BL6:IocSts:ChopSkf4:HZ_01_UPD_TIME") {
+	field(DESC, "HZ_01 Update Time")
+	field(SCAN, "10 second")
+	field(EGU, "second")
+	field(PREC, "5")
+	field(MDEL, "0.00001")
+	field(HYST, "0.00002")
+	field(INAM, "scanMonInit")
+	field(SNAM, "scanMon")
+	field(HHSV, "MAJOR")
+	field(HSV, "MINOR")
+	field(LSV, "MINOR")
+	field(LLSV, "MAJOR")
+	field(BRSV, "INVALID")
+	field(INPA, "BL6:IocSts:ChopSkf4:HZ_01_MODE")
+	field(B,    "1.0")
+	field(C,    "5.0")
+}
+
+record(bo, "BL6:IocSts:ChopSkf4:HZ_02_MODE") {
+	field(DESC, "HZ_02 Mode")
+	field(DOL, "1")
+	field(PINI, "YES")
+	field(ZNAM, "Relative")
+	field(ONAM, "Absolute")
+}
+record(sub, "BL6:IocSts:ChopSkf4:HZ_02_UPD_TIME") {
+	field(DESC, "HZ_02 Update Time")
+	field(SCAN, "5 second")
+	field(EGU, "second")
+	field(PREC, "5")
+	field(MDEL, "0.00001")
+	field(HYST, "0.00002")
+	field(INAM, "scanMonInit")
+	field(SNAM, "scanMon")
+	field(HHSV, "MAJOR")
+	field(HSV, "MINOR")
+	field(LSV, "MINOR")
+	field(LLSV, "MAJOR")
+	field(BRSV, "INVALID")
+	field(INPA, "BL6:IocSts:ChopSkf4:HZ_02_MODE")
+	field(B,    "1.0")
+	field(C,    "5.0")
+}
+
+record(bo, "BL6:IocSts:ChopSkf4:HZ_05_MODE") {
+	field(DESC, "HZ_05 Mode")
+	field(DOL, "1")
+	field(PINI, "YES")
+	field(ZNAM, "Relative")
+	field(ONAM, "Absolute")
+}
+record(sub, "BL6:IocSts:ChopSkf4:HZ_05_UPD_TIME") {
+	field(DESC, "HZ_05 Update Time")
+	field(SCAN, "2 second")
+	field(EGU, "second")
+	field(PREC, "5")
+	field(MDEL, "0.00001")
+	field(HYST, "0.00002")
+	field(INAM, "scanMonInit")
+	field(SNAM, "scanMon")
+	field(HHSV, "MAJOR")
+	field(HSV, "MINOR")
+	field(LSV, "MINOR")
+	field(LLSV, "MAJOR")
+	field(BRSV, "INVALID")
+	field(INPA, "BL6:IocSts:ChopSkf4:HZ_05_MODE")
+	field(B,    "1.0")
+	field(C,    "5.0")
+}
+
+record(bo, "BL6:IocSts:ChopSkf4:HZ_1_MODE") {
+	field(DESC, "HZ_1 Mode")
+	field(DOL, "1")
+	field(PINI, "YES")
+	field(ZNAM, "Relative")
+	field(ONAM, "Absolute")
+}
+record(sub, "BL6:IocSts:ChopSkf4:HZ_1_UPD_TIME") {
+	field(DESC, "HZ_1 Update Time")
+	field(SCAN, "1 second")
+	field(EGU, "second")
+	field(PREC, "5")
+	field(MDEL, "0.00001")
+	field(HYST, "0.00002")
+	field(INAM, "scanMonInit")
+	field(SNAM, "scanMon")
+	field(HHSV, "MAJOR")
+	field(HSV, "MINOR")
+	field(LSV, "MINOR")
+	field(LLSV, "MAJOR")
+	field(BRSV, "INVALID")
+	field(INPA, "BL6:IocSts:ChopSkf4:HZ_1_MODE")
+	field(B,    "1.0")
+	field(C,    "5.0")
+}
+
+record(bo, "BL6:IocSts:ChopSkf4:HZ_2_MODE") {
+	field(DESC, "HZ_2 Mode")
+	field(DOL, "1")
+	field(PINI, "YES")
+	field(ZNAM, "Relative")
+	field(ONAM, "Absolute")
+}
+record(sub, "BL6:IocSts:ChopSkf4:HZ_2_UPD_TIME") {
+	field(DESC, "HZ_2 Update Time")
+	field(SCAN, ".5 second")
+	field(EGU, "second")
+	field(PREC, "5")
+	field(MDEL, "0.00001")
+	field(HYST, "0.00002")
+	field(INAM, "scanMonInit")
+	field(SNAM, "scanMon")
+	field(HHSV, "MAJOR")
+	field(HSV, "MINOR")
+	field(LSV, "MINOR")
+	field(LLSV, "MAJOR")
+	field(BRSV, "INVALID")
+	field(INPA, "BL6:IocSts:ChopSkf4:HZ_2_MODE")
+	field(B,    "1.0")
+	field(C,    "5.0")
+}
+
+record(bo, "BL6:IocSts:ChopSkf4:HZ_5_MODE") {
+	field(DESC, "HZ_5 Mode")
+	field(DOL, "1")
+	field(PINI, "YES")
+	field(ZNAM, "Relative")
+	field(ONAM, "Absolute")
+}
+record(sub, "BL6:IocSts:ChopSkf4:HZ_5_UPD_TIME") {
+	field(DESC, "HZ_5 Update Time")
+	field(SCAN, ".2 second")
+	field(EGU, "second")
+	field(PREC, "5")
+	field(MDEL, "0.00001")
+	field(HYST, "0.00002")
+	field(INAM, "scanMonInit")
+	field(SNAM, "scanMon")
+	field(HHSV, "MAJOR")
+	field(HSV, "MINOR")
+	field(LSV, "MINOR")
+	field(LLSV, "MAJOR")
+	field(BRSV, "INVALID")
+	field(INPA, "BL6:IocSts:ChopSkf4:HZ_5_MODE")
+	field(B,    "1.0")
+	field(C,    "5.0")
+}
+
+record(bo, "BL6:IocSts:ChopSkf4:HZ_10_MODE") {
+	field(DESC, "HZ_10 Mode")
+	field(DOL, "1")
+	field(PINI, "YES")
+	field(ZNAM, "Relative")
+	field(ONAM, "Absolute")
+}
+record(sub, "BL6:IocSts:ChopSkf4:HZ_10_UPD_TIME") {
+	field(DESC, "HZ_10 Update Time")
+	field(SCAN, ".1 second")
+	field(EGU, "second")
+	field(PREC, "5")
+	field(MDEL, "0.00001")
+	field(HYST, "0.00002")
+	field(INAM, "scanMonInit")
+	field(SNAM, "scanMon")
+	field(HHSV, "MAJOR")
+	field(HSV, "MINOR")
+	field(LSV, "MINOR")
+	field(LLSV, "MAJOR")
+	field(BRSV, "INVALID")
+	field(INPA, "BL6:IocSts:ChopSkf4:HZ_10_MODE")
+	field(B,    "1.0")
+	field(C,    "5.0")
+}
+
+
+record(calc, "BL6:IocSts:ChopSkf4:SCANMON_SEVR") {
+    field(DESC, "ScanMon Max Severity")
+    field(SCAN, "1 second")
+    field(CALC, "0")
+    field(INPA, "BL6:IocSts:ChopSkf4:HZ_01_UPD_TIME.SEVR MS")
+    field(INPB, "BL6:IocSts:ChopSkf4:HZ_02_UPD_TIME.SEVR MS")
+    field(INPC, "BL6:IocSts:ChopSkf4:HZ_05_UPD_TIME.SEVR MS")
+    field(INPD, "BL6:IocSts:ChopSkf4:HZ_1_UPD_TIME.SEVR MS")
+    field(INPE, "BL6:IocSts:ChopSkf4:HZ_2_UPD_TIME.SEVR MS")
+    field(INPF, "BL6:IocSts:ChopSkf4:HZ_5_UPD_TIME.SEVR MS")
+    field(INPG, "BL6:IocSts:ChopSkf4:HZ_10_UPD_TIME.SEVR MS")
+}
+
+
+##########################################################
+# Extra SNS records
+
+# ///
+# /// Add a new record to calculate
+# /// percent memory and file descriptors used.
+# /// Then forward link to some new status records below.
+# ///
+record(calc, "BL6:IocSts:ChopSkf4:MEM_USED_PER") {
+  field(SCAN, "1 second")
+  field(INPA, "BL6:IocSts:ChopSkf4:MEM_USED")
+  field(INPB, "BL6:IocSts:ChopSkf4:MEM_MAX")
+  field(CALC, "(A/B)*100")
+  field(EGU, "%")
+  field(PREC, "2")
+  field(HIGH, "50")
+  field(HIHI, "80")
+  field(HSV, "MINOR")
+  field(HHSV, "MAJOR")
+  field(FLNK, "BL6:IocSts:ChopSkf4:FD_CNT_PER")
+  info(autosaveFields_pass0, "HIGH HIHI")
+}
+record(calc, "BL6:IocSts:ChopSkf4:FD_CNT_PER") {
+  field(INPA, "BL6:IocSts:ChopSkf4:FD_CNT")
+  field(INPB, "BL6:IocSts:ChopSkf4:FD_MAX")
+  field(CALC, "(A/B)*100")
+  field(EGU, "%")
+  field(PREC, "1")
+  field(HIGH, "80")
+  field(HIHI, "90")
+  field(HSV, "MINOR")
+  field(HHSV, "MAJOR")
+  field(FLNK, "BL6:IocSts:ChopSkf4:Q_SEVR")
+  info(autosaveFields_pass0, "HIGH HIHI")
+}
+
+# ///
+# /// Add limits on the queue used % records
+# ///
+record(calc, "BL6:IocSts:ChopSkf4:SCANONCE_Q_USEDPER") {
+  field(PREC, "1")
+  field(HIGH, "50")
+  field(HIHI, "80")
+  field(HSV, "MINOR")
+  field(HHSV, "MAJOR")
+  info(autosaveFields_pass0, "HIGH HIHI")
+}
+record(calc, "BL6:IocSts:ChopSkf4:CBLOW_Q_USEDPER") {
+  field(PREC, "1")
+  field(HIGH, "50")
+  field(HIHI, "80")
+  field(HSV, "MINOR")
+  field(HHSV, "MAJOR")
+  info(autosaveFields_pass0, "HIGH HIHI")
+}
+record(calc, "BL6:IocSts:ChopSkf4:CBMEDIUM_Q_USEDPER") {
+  field(PREC, "1")
+  field(HIGH, "50")
+  field(HIHI, "80")
+  field(HSV, "MINOR")
+  field(HHSV, "MAJOR")
+  info(autosaveFields_pass0, "HIGH HIHI")
+}
+record(calc, "BL6:IocSts:ChopSkf4:CBHIGH_Q_USEDPER") {
+  field(PREC, "1")
+  field(HIGH, "50")
+  field(HIHI, "80")
+  field(HSV, "MINOR")
+  field(HHSV, "MAJOR")
+  info(autosaveFields_pass0, "HIGH HIHI")
+}
+
+# ///
+# /// Add limits on the queue high % records
+# ///
+record(calc, "BL6:IocSts:ChopSkf4:SCANONCE_Q_HIGHPER") {
+  field(PREC, "1")
+  field(HIGH, "50")
+  field(HIHI, "80")
+  field(HSV, "MINOR")
+  field(HHSV, "MAJOR")
+  info(autosaveFields_pass0, "HIGH HIHI")
+}
+record(calc, "BL6:IocSts:ChopSkf4:CBLOW_Q_HIGHPER") {
+  field(PREC, "1")
+  field(HIGH, "50")
+  field(HIHI, "80")
+  field(HSV, "MINOR")
+  field(HHSV, "MAJOR")
+  info(autosaveFields_pass0, "HIGH HIHI")
+}
+record(calc, "BL6:IocSts:ChopSkf4:CBMEDIUM_Q_HIGHPER") {
+  field(PREC, "1")
+  field(HIGH, "50")
+  field(HIHI, "80")
+  field(HSV, "MINOR")
+  field(HHSV, "MAJOR")
+  info(autosaveFields_pass0, "HIGH HIHI")
+}
+record(calc, "BL6:IocSts:ChopSkf4:CBHIGH_Q_HIGHPER") {
+  field(PREC, "1")
+  field(HIGH, "50")
+  field(HIHI, "80")
+  field(HSV, "MINOR")
+  field(HHSV, "MAJOR")
+  info(autosaveFields_pass0, "HIGH HIHI")
+}
+
+# ///
+# /// Add limits on the queue overrun records
+# ///
+record(ai, "BL6:IocSts:ChopSkf4:SCANONCE_Q_OVERRUNS") {
+  field(HIGH, "1")
+  field(HIHI, "1")
+  field(HSV, "MINOR")
+  field(HHSV, "MAJOR")
+  info(autosaveFields_pass0, "HIGH HIHI")
+}
+record(ai, "BL6:IocSts:ChopSkf4:CBLOW_Q_OVERRUNS") {
+  field(HIGH, "1")
+  field(HIHI, "1")
+  field(HSV, "MINOR")
+  field(HHSV, "MAJOR")
+  info(autosaveFields_pass0, "HIGH HIHI")
+}
+record(ai, "BL6:IocSts:ChopSkf4:CBMEDIUM_Q_OVERRUNS") {
+  field(HIGH, "1")
+  field(HIHI, "1")
+  field(HSV, "MINOR")
+  field(HHSV, "MAJOR")
+  info(autosaveFields_pass0, "HIGH HIHI")
+}
+record(ai, "BL6:IocSts:ChopSkf4:CBHIGH_Q_OVERRUNS") {
+  field(HIGH, "1")
+  field(HIHI, "1")
+  field(HSV, "MINOR")
+  field(HHSV, "MAJOR")
+  info(autosaveFields_pass0, "HIGH HIHI")
+}
+
+# ///
+# /// Summarize the Q severity
+# ///
+record(calc, "BL6:IocSts:ChopSkf4:Q_SEVR") {
+  field(INPA, "BL6:IocSts:ChopSkf4:SCANONCE_Q_USEDPER MS")
+  field(INPB, "BL6:IocSts:ChopSkf4:CBLOW_Q_USEDPER MS")
+  field(INPC, "BL6:IocSts:ChopSkf4:CBMEDIUM_Q_USEDPER MS")
+  field(INPD, "BL6:IocSts:ChopSkf4:CBHIGH_Q_USEDPER MS")
+  field(INPE, "BL6:IocSts:ChopSkf4:SCANONCE_Q_HIGHPER MS")
+  field(INPF, "BL6:IocSts:ChopSkf4:CBLOW_Q_HIGHPER MS")
+  field(INPG, "BL6:IocSts:ChopSkf4:CBMEDIUM_Q_HIGHPER MS")
+  field(INPH, "BL6:IocSts:ChopSkf4:CBHIGH_Q_HIGHPER MS")
+  field(INPI, "BL6:IocSts:ChopSkf4:SCANONCE_Q_OVERRUNS MS")
+  field(INPJ, "BL6:IocSts:ChopSkf4:CBLOW_Q_OVERRUNS MS")
+  field(INPK, "BL6:IocSts:ChopSkf4:CBMEDIUM_Q_OVERRUNS MS")
+  field(INPL, "BL6:IocSts:ChopSkf4:CBHIGH_Q_OVERRUNS MS")
+  field(FLNK, "BL6:IocSts:ChopSkf4:STATCALC")
+}
+
+# ///
+# /// Top level status record
+# ///
+record(calcout, "BL6:IocSts:ChopSkf4:STATCALC") {
+  field(DESC, "IOC Stat Status Calc")
+  field(INPA, "BL6:IocSts:ChopSkf4:STATCTRL")
+  field(INPB, "BL6:IocSts:ChopSkf4:SYS_CPU_LOAD.SEVR")
+  field(INPC, "BL6:IocSts:ChopSkf4:IOC_CPU_LOAD.SEVR")
+  field(INPD, "BL6:IocSts:ChopSkf4:CA_CLNT_CNT.SEVR")
+  field(INPE, "BL6:IocSts:ChopSkf4:CA_CONN_CNT.SEVR")
+  field(INPF, "BL6:IocSts:ChopSkf4:SUSP_TASK_CNT.SEVR")
+  field(INPG, "BL6:IocSts:ChopSkf4:SCANMON_SEVR.SEVR")
+  field(INPH, "BL6:IocSts:ChopSkf4:Q_SEVR.SEVR")
+  field(INPI, "BL6:IocSts:ChopSkf4:MEM_USED_PER.SEVR")
+  field(INPJ, "BL6:IocSts:ChopSkf4:FD_CNT_PER.SEVR")
+  field(CALC, "A?0:(B>1||C>1||D>1||E>1||F>1||G>1||H>1||I>1||J>1)")
+  field(OOPT, "Every Time")
+  field(OUT, "BL6:IocSts:ChopSkf4:STATUS PP")
+}
+record(bo, "BL6:IocSts:ChopSkf4:STATUS") {
+  field(DESC, "IOC Stat Status")
+  field(ZNAM, "IOC Status OK")
+  field(ONAM, "IOC Status Problem")
+  field(ZSV, "NO_ALARM")
+  field(OSV, "MAJOR")
+  info(archive, "Monitor, 00:00:01, VAL")
+}
+record(bo, "BL6:IocSts:ChopSkf4:STATCTRL") {
+  field(DESC, "IOC Stat Control")
+  field(PINI, "YES")
+  field(VAL, "0")
+  field(ZNAM, "Alarm Enabled")
+  field(ONAM, "Alarm Disabled")
+  field(ZSV, "NO_ALARM")
+  field(OSV, "MINOR")
+  field(FLNK, "BL6:IocSts:ChopSkf4:STATCALC")
+  info(autosaveFields_pass0, "VAL")
+  info(archive, "Monitor, 00:00:01, VAL")
+}
