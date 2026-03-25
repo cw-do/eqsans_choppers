@@ -4,12 +4,14 @@ Python tools for extracting, visualizing, and analyzing TOF spectra from EQSANS 
 
 ## Requirements
 
-### Option 1: Local Virtual Environment (Recommended)
+### Option 1: Virtual Environment (Recommended)
 
-A pre-configured virtual environment is included in this directory:
+Create a virtual environment and install dependencies from `requirements.txt`:
 
 ```bash
+python3 -m venv .venv
 source .venv/bin/activate
+pip install -r requirements.txt
 ```
 
 To deactivate when done:
@@ -31,13 +33,7 @@ conda activate py312
 
 numpy, scipy, pandas, matplotlib, h5py
 
-To recreate the virtual environment from scratch:
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install numpy scipy pandas matplotlib h5py
-```
+These are listed in `requirements.txt` for easy installation with pip.
 
 ## Tools
 
