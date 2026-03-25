@@ -1,0 +1,52 @@
+\contentsline {section}{ABSTRACT}{1}{section*.3}%
+\contentsline {section}{\numberline {1}INTRODUCTION}{1}{section.1}%
+\contentsline {section}{\numberline {2}PHYSICAL BACKGROUND}{1}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Chopper Timing and TOF}{1}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Chopper Configuration}{1}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}60\,Hz vs 30\,Hz Operation}{2}{subsection.2.3}%
+\contentsline {subsection}{\numberline {2.4}Monochromatic Mode}{3}{subsection.2.4}%
+\contentsline {section}{\numberline {3}TOOL 1: INTERACTIVE EDGE FINDER}{3}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Purpose}{3}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Starting the Tool}{3}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}User Interface Overview}{4}{subsection.3.3}%
+\contentsline {subsection}{\numberline {3.4}Keyboard Shortcuts and Controls}{4}{subsection.3.4}%
+\contentsline {subsection}{\numberline {3.5}Step-by-Step Workflow: Extracting Phase Offset}{4}{subsection.3.5}%
+\contentsline {subsubsection}{\numberline {3.5.1}Step 1: Load the Monitor Spectrum}{4}{subsubsection.3.5.1}%
+\contentsline {subsubsection}{\numberline {3.5.2}Step 2: Mark Edge Positions}{5}{subsubsection.3.5.2}%
+\contentsline {subsubsection}{\numberline {3.5.3}Step 3: Fit the Edges}{5}{subsubsection.3.5.3}%
+\contentsline {subsubsection}{\numberline {3.5.4}Step 4: Capture Edge Values for Phase Calculation}{5}{subsubsection.3.5.4}%
+\contentsline {subsubsection}{\numberline {3.5.5}Step 5: Read the Phase Offset}{6}{subsubsection.3.5.5}%
+\contentsline {subsubsection}{\numberline {3.5.6}Step 6: Save Results}{6}{subsubsection.3.5.6}%
+\contentsline {subsection}{\numberline {3.6}Example: 30\,Hz Frame-Skip Mode}{6}{subsection.3.6}%
+\contentsline {section}{\numberline {4}TOOL 2: MULTI-CHOPPER SIMULATOR}{6}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Purpose}{6}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Starting the Tool}{7}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}User Interface Overview}{7}{subsection.4.3}%
+\contentsline {subsection}{\numberline {4.4}Control Panel Elements}{7}{subsection.4.4}%
+\contentsline {subsection}{\numberline {4.5}Understanding the hexaSub Checkbox}{7}{subsection.4.5}%
+\contentsline {subsection}{\numberline {4.6}Step-by-Step Workflow: Verifying hexaSub Phases}{8}{subsection.4.6}%
+\contentsline {subsubsection}{\numberline {4.6.1}Step 1: Configure the Frequency}{8}{subsubsection.4.6.1}%
+\contentsline {subsubsection}{\numberline {4.6.2}Step 2: Enable the Appropriate Choppers}{8}{subsubsection.4.6.2}%
+\contentsline {subsubsection}{\numberline {4.6.3}Step 3: Enable hexaSub Phases}{8}{subsubsection.4.6.3}%
+\contentsline {subsubsection}{\numberline {4.6.4}Step 4: Enter hexaSub OGC Values}{8}{subsubsection.4.6.4}%
+\contentsline {subsubsection}{\numberline {4.6.5}Step 5: Run the Simulation}{9}{subsubsection.4.6.5}%
+\contentsline {subsubsection}{\numberline {4.6.6}Step 6: Verify the Results}{9}{subsubsection.4.6.6}%
+\contentsline {subsection}{\numberline {4.7}Understanding the Distance--Time Diagram}{9}{subsection.4.7}%
+\contentsline {subsection}{\numberline {4.8}Relationship to hexaSub.c}{9}{subsection.4.8}%
+\contentsline {subsubsection}{\numberline {4.8.1}Common Elements}{10}{subsubsection.4.8.1}%
+\contentsline {subsubsection}{\numberline {4.8.2}60\,Hz Mode (Standard Operation)}{10}{subsubsection.4.8.2}%
+\contentsline {subsubsection}{\numberline {4.8.3}30\,Hz Frame-Skip Mode}{11}{subsubsection.4.8.3}%
+\contentsline {subsubsection}{\numberline {4.8.4}Monochromatic Mode}{12}{subsubsection.4.8.4}%
+\contentsline {subsubsection}{\numberline {4.8.5}Summary: Mode Comparison}{12}{subsubsection.4.8.5}%
+\contentsline {section}{\numberline {5}PRACTICAL EXAMPLES}{12}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Example 1: Single Chopper Calibration (60\,Hz)}{12}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Example 2: Verifying 30\,Hz Frame-Skip Configuration}{13}{subsection.5.2}%
+\contentsline {subsection}{\numberline {5.3}Example 3: Diagnosing Phase Mismatch}{13}{subsection.5.3}%
+\contentsline {section}{\numberline {6}TROUBLESHOOTING}{14}{section.6}%
+\contentsline {subsection}{\numberline {6.1}No Wavelengths Pass in Simulator}{14}{subsection.6.1}%
+\contentsline {subsection}{\numberline {6.2}Edge Fit Fails}{14}{subsection.6.2}%
+\contentsline {subsection}{\numberline {6.3}Phase Calculator Shows Unexpected Values}{14}{subsection.6.3}%
+\contentsline {section}{\numberline {7}FILE FORMATS}{14}{section.7}%
+\contentsline {subsection}{\numberline {7.1}Monitor Spectrum (.dat)}{14}{subsection.7.1}%
+\contentsline {subsection}{\numberline {7.2}Edge Fit Results (.dat)}{14}{subsection.7.2}%
+\contentsline {section}{\numberline {8}REFERENCES}{15}{section.8}%
