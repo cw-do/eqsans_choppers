@@ -3,5 +3,6 @@ __pycache__/
 .venv/
 single_chopper_data/
 *.png
+!doc/figures/*.png
 *.dat
 !edge_refinement/*.dat
