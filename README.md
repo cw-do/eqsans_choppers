@@ -25,8 +25,9 @@ deactivate
 Alternatively, use the shared conda environment:
 
 ```bash
-source /SNS/users/ccd/miniforge3/etc/profile.d/conda.sh
-conda activate py312
+source [location of miniforge3]/miniforge3/etc/profile.d/conda.sh
+conda activate [env]
+pip install -r requirements.txt
 ```
 
 ### Required Packages
