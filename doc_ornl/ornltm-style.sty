@@ -1,0 +1,109 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% File: ornltm-style.sty (Minimal version)
+% Original Author: Seth R Johnson with contributions by Sam Crawford and John Batson
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\NeedsTeXFormat{LaTeX2e}[1995/12/01]
+\ProvidesPackage{ornltm-style}[2018/10/13 package ORNL Technical Memorandum style]
+
+\ProcessOptions\relax
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% GEOMETRY
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\RequirePackage{geometry}
+\geometry{margin=1in,footskip=.75in}
+\addtolength{\headheight}{1.6pt}
+\addtolength{\topmargin}{-1.6pt}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% FONTS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\RequirePackage{amsmath}
+\RequirePackage[T1]{fontenc}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% COLORS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\RequirePackage{color}
+
+\hypersetup{
+	colorlinks,
+  linkcolor=[rgb]{0.01,0.05,0.1],
+	citecolor=[rgb]{0.780,0.647,0.258},
+	urlcolor=[rgb]{0.325,0.494,0.658]
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% LINE SPACING
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\setlength\parskip{0.5\baselineskip \@plus 0.25\baselineskip \@minus 0.25\baselineskip}
+\setlength\parindent\z@
+\setlength\partopsep\z@
+
+\def\@listI{\leftmargin\leftmargini
+   \topsep\z@ \parsep\parskip \itemsep\z@}
+\let\@listi\@listI
+\@listi
+     
+\def\@listii{\leftmargin\leftmarginii
+   \labelwidth\leftmarginii\advance\labelwidth-\labelsep
+   \topsep\z@ \parsep\parskip \itemsep\z@}
+     
+\def\@listiii{\leftmargin\leftmarginiii
+    \labelwidth\leftmarginiii\advance\labelwidth-\labelsep
+    \topsep\z@ \parsep\parskip \itemsep\z@}
+
+\tolerance=1000
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% TITLE STYLES 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\RequirePackage{titlesec}
+      
+\setcounter{secnumdepth}{5} 
+            
+\titleclass{\section}{top}
+\newcommand{\sectionbreak}{\cleardoublepage}
+\renewcommand\headrulewidth{0pt}
+\titleformat{\section}{\centering\bf}{\thesection.}{1ex}{\MakeUppercase}[]
+\titleformat{\subsection}{\bf}{\thesubsection}{1ex}{\MakeUppercase}[]
+\titleformat{\subsubsection}{\bf}{\thesubsubsection}{1ex}{}[]
+\titleformat{\paragraph}{\bf}{\theparagraph}{1ex}{}[]
+\titleformat{\subparagraph}{\bf\itshape}{\relax}{0pt}{}[]
+
+\titlespacing{\section}{\z@}{\parskip}{\z@}
+\titlespacing{\subsection}{\z@}{\parskip}{\z@}
+\titlespacing{\subsubsection}{\z@}{0.5\parskip}{\z@}
+\titlespacing{\paragraph}{\z@}{0.5\parskip}{\z@}
+\titlespacing{\subparagraph}{\z@}{0.5\parskip}{\z@}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% APPENDIX STYLING
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\renewcommand\appendixname{APPENDIX}
+
+\renewcommand\appendix{%
+  \cleardoublepage
+  \pagenumbering{arabic}%
+  \renewcommand\thepage{\thesection-\arabic{page}}%
+  \gdef\thesection{\@Alph\c@section}%
+  \setcounter{section}{0}%
+  \gdef\theequation{\@Alph\c@section-\arabic{equation}}%
+  \gdef\thefigure{\@Alph\c@section-\arabic{figure}}%
+  \gdef\thetable{\@Alph\c@section-\arabic{table}}%
+  \@addtoreset{equation}{section}%
+  \@addtoreset{figure}{section}%
+  \@addtoreset{table}{section}%
+  \@addtoreset{page}{section}%
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\endinput
