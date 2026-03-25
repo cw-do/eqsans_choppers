@@ -1,5 +1,0 @@
-file ioc_sns.db
-{
-pattern {IOCNAME}
-        {BL6:IocSts:ChopSkf5}
-}

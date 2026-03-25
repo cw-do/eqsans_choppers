@@ -1,3 +1,5 @@
+# fit based on the one side of rise only using single chopper
+
 # 1a phase delay 0 5.698m
 fall: 8841
 rise top; 10675.6

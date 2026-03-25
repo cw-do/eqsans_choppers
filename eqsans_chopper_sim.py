@@ -10,20 +10,33 @@ import tkinter as tk
 from tkinter import ttk
 from pathlib import Path
 
-FREQ        = 60.0
-PERIOD      = 1.0 / FREQ
-PERIOD_US   = PERIOD * 1e6
 H_OVER_MN   = 3956.0
+SOURCE_PERIOD = 1.0 / 60.0
+
+FREQ_OPTIONS = {
+    60: {"freq": 60.0, "period": 1.0 / 60.0, "period_us": 1e6 / 60.0},
+    30: {"freq": 30.0, "period": 1.0 / 30.0, "period_us": 1e6 / 30.0},
+}
 
 CHOPPER_CONFIG = {
-    "1a": {"L_CHOP": 5.6978, "OPENING_DEG": 129.600},
-    "1b": {"L_CHOP": 5.7078, "OPENING_DEG": 129.600},
-    "2a": {"L_CHOP": 7.7978, "OPENING_DEG": 180.000},
-    "2b": {"L_CHOP": 7.8078, "OPENING_DEG": 180.000},
+    "1b": {"L_CHOP": 5.6757668, "OPENING_DEG": 129.605},
+    "2b": {"L_CHOP": 7.7757668, "OPENING_DEG": 179.989},
     "3a": {"L_CHOP": 9.4978, "OPENING_DEG": 230.010},
     "3b": {"L_CHOP": 9.5078, "OPENING_DEG": 230.007},
+    "1a": {"L_CHOP": 5.6601247, "OPENING_DEG": 129.605},
+    "2a": {"L_CHOP": 7.7601247, "OPENING_DEG": 179.989},
 }
-CHOPPER_NAMES = ["1a", "1b", "2a", "2b", "3a", "3b"]
+CHOPPER_NAMES = ["1b", "2b", "3a", "3b", "1a", "2a"]
+
+HEXASUB_PHASE_OFFSET_30HZ = {
+    "1b": 29908.92, "2b": 29610.8, "3a": 29452.12, "3b": 29131.2,
+    "1a": 30145.78, "2a": 29668.04,
+}
+HEXASUB_PHASE_OFFSET_60HZ = {
+    "1b": 14954.46, "2b": 14805.4, "3a": 14726.06, "3b": 14565.6,
+    "1a": 15072.89, "2a": 14834.04,
+}
+FRAMESKIP_ALIGN_30HZ = {"3a": 33333.33, "3b": 33333.33}
 
 
 def load_flux_data(file_path: str):
@@ -36,22 +49,62 @@ def load_flux_data(file_path: str):
         return pd.DataFrame({'x': wav, 'Y': flux})
 
 
-def ogc_to_left_edge_s(ogc_us: float, opening_deg: float) -> float:
-    half_open_s = (opening_deg / 360.0) * PERIOD / 2.0
+def ogc_to_left_edge_s(ogc_us: float, opening_deg: float, period: float) -> float:
+    half_open_s = (opening_deg / 360.0) * period / 2.0
     return ogc_us * 1e-6 - half_open_s
 
 
-def simulate_multi_chopper(wav_fine, flux_fine, choppers, l_det, t_plot_limit):
+def simulate_multi_chopper(wav_fine, flux_fine, choppers, l_det, t_plot_limit, chopper_period):
+    is_30hz = abs(chopper_period - 1.0/30.0) < 0.001
+    if is_30hz:
+        return _simulate_30hz_frameskip(
+            wav_fine, flux_fine, choppers, l_det, t_plot_limit, chopper_period
+        )
+    
     velocities = H_OVER_MN / wav_fine
     passed_trajectories = []
 
-    for p in range(-6, int(t_plot_limit / PERIOD) + 2):
-        t_src = p * PERIOD
+    for p in range(-12, int(t_plot_limit / SOURCE_PERIOD) + 2):
+        t_src = p * SOURCE_PERIOD
         t_arrival = t_src + (np.outer(1.0 / velocities, [c['l_chop'] for c in choppers]))
 
         mask_pass = np.ones(len(wav_fine), dtype=bool)
         for ci, chop in enumerate(choppers):
-            rel = (t_arrival[:, ci] - chop['left_edge_s']) % PERIOD
+            rel = (t_arrival[:, ci] - chop['left_edge_s']) % chopper_period
+            mask_pass &= rel < chop['opening_s']
+
+        if np.any(mask_pass):
+            t_det = t_src + l_det / velocities[mask_pass]
+            passed_trajectories.append({
+                'p':          p,
+                't_src':      t_src,
+                'velocities': velocities[mask_pass],
+                'fluxes':     flux_fine[mask_pass],
+                'wavs':       wav_fine[mask_pass],
+                't_det':      t_det,
+            })
+
+    return passed_trajectories
+
+
+def _simulate_30hz_frameskip(wav_fine, flux_fine, choppers, l_det, t_plot_limit, chopper_period):
+    """
+    30Hz frame-skip mode: choppers align to different source pulses.
+    
+    In frame-skip mode, the chopper period (33.33ms) is 2x the source period (16.67ms).
+    Different choppers deliberately align to different pulses. We check if each
+    wavelength can pass ALL choppers at ANY of their periodic openings.
+    """
+    velocities = H_OVER_MN / wav_fine
+    passed_trajectories = []
+
+    for p in range(-12, int(t_plot_limit / SOURCE_PERIOD) + 2):
+        t_src = p * SOURCE_PERIOD
+        mask_pass = np.ones(len(wav_fine), dtype=bool)
+
+        for ci, chop in enumerate(choppers):
+            t_arr = t_src + chop['l_chop'] / velocities
+            rel = (t_arr - chop['left_edge_s']) % chopper_period
             mask_pass &= rel < chop['opening_s']
 
         if np.any(mask_pass):
@@ -96,6 +149,10 @@ class ChopperSimApp:
         self._wav_fine  = wav_fine
         self._flux_fine = np.maximum(0, f_interp(wav_fine))
 
+    def _get_freq_settings(self):
+        freq_hz = self._freq_var.get()
+        return FREQ_OPTIONS[freq_hz]
+
     def _build_ui(self):
         PAD = dict(padx=6, pady=3)
 
@@ -111,6 +168,17 @@ class ChopperSimApp:
 
         self._all_entries: list = [det_entry]
 
+        freq_frame = tk.Frame(ctrl)
+        freq_frame.grid(row=0, column=2, columnspan=2, sticky='w', **PAD)
+        tk.Label(freq_frame, text="Frequency:", font=("", 9)).pack(side='left')
+        self._freq_var = tk.IntVar(value=60)
+        tk.Radiobutton(freq_frame, text="60 Hz", variable=self._freq_var,
+                       value=60, font=("", 9),
+                       command=self._on_freq_change).pack(side='left', padx=2)
+        tk.Radiobutton(freq_frame, text="30 Hz", variable=self._freq_var,
+                       value=30, font=("", 9),
+                       command=self._on_freq_change).pack(side='left', padx=2)
+
         sep = ttk.Separator(ctrl, orient='horizontal')
         sep.grid(row=1, column=0, columnspan=4, sticky='ew', pady=6)
 
@@ -122,6 +190,7 @@ class ChopperSimApp:
         self._enabled_vars: dict[str, tk.BooleanVar] = {}
         self._ogc_vars:     dict[str, tk.StringVar]  = {}
         self._mech_vars:    dict[str, tk.StringVar]  = {}
+        self._opening_labels: dict[str, tk.Label]   = {}
 
         default_ogc = {
             "1a": "8000", "1b": "8000",
@@ -129,19 +198,22 @@ class ChopperSimApp:
             "3a": "13500", "3b": "13500",
         }
 
+        period_us = self._get_freq_settings()["period_us"]
         for i, name in enumerate(CHOPPER_NAMES):
             row = i + 3
             cfg = CHOPPER_CONFIG[name]
 
-            opening_us = (cfg['OPENING_DEG'] / 360.0) * PERIOD_US
+            opening_us = (cfg['OPENING_DEG'] / 360.0) * period_us
             lbl_frame = tk.Frame(ctrl)
             lbl_frame.grid(row=row, column=0, sticky='w', **PAD)
             tk.Label(lbl_frame,
                      text=f"{name}  ({cfg['L_CHOP']:.4f} m, {cfg['OPENING_DEG']:.1f}°)",
                      font=("", 9)).pack(anchor='w')
-            tk.Label(lbl_frame,
+            opening_lbl = tk.Label(lbl_frame,
                      text=f"  opening gap: {opening_us:.1f} µs",
-                     font=("", 8), fg='#555555').pack(anchor='w')
+                     font=("", 8), fg='#555555')
+            opening_lbl.pack(anchor='w')
+            self._opening_labels[name] = opening_lbl
 
             en_var = tk.BooleanVar(value=False)
             self._enabled_vars[name] = en_var
@@ -155,7 +227,7 @@ class ChopperSimApp:
             ogc_entry.bind('<Return>', lambda e: self._on_calculate())
             self._all_entries.append(ogc_entry)
 
-            mech_var = tk.StringVar(value="1900")
+            mech_var = tk.StringVar(value="0")
             self._mech_vars[name] = mech_var
             mech_entry = tk.Entry(ctrl, textvariable=mech_var, width=10)
             mech_entry.grid(row=row, column=3, **PAD)
@@ -165,13 +237,24 @@ class ChopperSimApp:
         sep2 = ttk.Separator(ctrl, orient='horizontal')
         sep2.grid(row=10, column=0, columnspan=4, sticky='ew', pady=6)
 
+        hexasub_frame = tk.Frame(ctrl)
+        hexasub_frame.grid(row=11, column=0, columnspan=4, sticky='w', **PAD)
+        self._hexasub_var = tk.BooleanVar(value=False)
+        tk.Checkbutton(hexasub_frame, text="hexaSub phases",
+                       variable=self._hexasub_var, font=("", 9),
+                       command=self._on_hexasub_toggle).pack(side='left')
+        self._hexasub_label = tk.Label(hexasub_frame, 
+                                       text="(auto-apply calibration offset)",
+                                       font=("", 8), fg='#666666')
+        self._hexasub_label.pack(side='left', padx=4)
+
         self._status_var = tk.StringVar(value="Ready.")
         tk.Label(ctrl, textvariable=self._status_var, fg='darkblue',
                  font=("", 9), wraplength=220, justify='left').grid(
-            row=11, column=0, columnspan=3, sticky='w', **PAD)
+            row=12, column=0, columnspan=3, sticky='w', **PAD)
 
         btn_frame = tk.Frame(ctrl)
-        btn_frame.grid(row=12, column=0, columnspan=3, pady=8)
+        btn_frame.grid(row=13, column=0, columnspan=3, pady=8)
 
         tk.Button(btn_frame, text="Calculate", font=("", 10, "bold"),
                   bg="#4CAF50", fg="white", padx=10,
@@ -205,7 +288,37 @@ class ChopperSimApp:
         self._canvas.get_tk_widget().pack(fill='both', expand=True)
         self._canvas.draw()
 
+    def _on_freq_change(self):
+        period_us = self._get_freq_settings()["period_us"]
+        for name in CHOPPER_NAMES:
+            cfg = CHOPPER_CONFIG[name]
+            opening_us = (cfg['OPENING_DEG'] / 360.0) * period_us
+            self._opening_labels[name].config(text=f"  opening gap: {opening_us:.1f} µs")
+        self._update_hexasub_offsets()
+
+    def _on_hexasub_toggle(self):
+        self._update_hexasub_offsets()
+        self._on_calculate()
+
+    def _update_hexasub_offsets(self):
+        if not self._hexasub_var.get():
+            for name in CHOPPER_NAMES:
+                self._mech_vars[name].set("0")
+            return
+        
+        freq_hz = self._freq_var.get()
+        if freq_hz == 30:
+            for name in CHOPPER_NAMES:
+                offset = -HEXASUB_PHASE_OFFSET_30HZ[name]
+                align = FRAMESKIP_ALIGN_30HZ.get(name, 0)
+                self._mech_vars[name].set(f"{offset + align:.2f}")
+        else:
+            for name in CHOPPER_NAMES:
+                offset = -HEXASUB_PHASE_OFFSET_60HZ[name]
+                self._mech_vars[name].set(f"{offset:.2f}")
+
     def _active_choppers(self):
+        period = self._get_freq_settings()["period"]
         choppers = []
         for name in CHOPPER_NAMES:
             if not self._enabled_vars[name].get():
@@ -218,11 +331,11 @@ class ChopperSimApp:
                 self._status_var.set(f"Invalid OGC or mech. offset for chopper {name}.")
                 return None
             effective_ogc_us = ogc_us + mech_us
-            left_edge_s = ogc_to_left_edge_s(effective_ogc_us, cfg['OPENING_DEG'])
+            left_edge_s = ogc_to_left_edge_s(effective_ogc_us, cfg['OPENING_DEG'], period)
             choppers.append({
                 'name':        name,
                 'l_chop':      cfg['L_CHOP'],
-                'opening_s':   (cfg['OPENING_DEG'] / 360.0) * PERIOD,
+                'opening_s':   (cfg['OPENING_DEG'] / 360.0) * period,
                 'left_edge_s': left_edge_s,
                 'ogc_us':      ogc_us,
                 'mech_us':     mech_us,
@@ -247,14 +360,15 @@ class ChopperSimApp:
         self._status_var.set("Calculating…")
         self.root.update_idletasks()
 
+        period = self._get_freq_settings()["period"]
         t_plot_limit = max(0.08, l_det / H_OVER_MN * 25 * 1.5)
 
         passed = simulate_multi_chopper(
-            self._wav_fine, self._flux_fine, choppers, l_det, t_plot_limit
+            self._wav_fine, self._flux_fine, choppers, l_det, t_plot_limit, period
         )
         tof_bins, intensity = build_tof_histogram(passed, t_plot_limit)
 
-        self._draw_plots(choppers, passed, tof_bins, intensity, l_det, t_plot_limit)
+        self._draw_plots(choppers, passed, tof_bins, intensity, l_det, t_plot_limit, period)
 
         n_pulses = len(passed)
         self._status_var.set(
@@ -263,7 +377,7 @@ class ChopperSimApp:
             if intensity.any() else "Done. No neutrons passed all choppers."
         )
 
-    def _draw_plots(self, choppers, passed, tof_bins, intensity, l_det, t_plot_limit):
+    def _draw_plots(self, choppers, passed, tof_bins, intensity, l_det, t_plot_limit, period):
         self._ax_dist.cla()
         self._ax_tof.cla()
 
@@ -280,9 +394,9 @@ class ChopperSimApp:
         colors_chop = ['red', 'tomato', 'darkorange', 'orange', 'darkred', 'firebrick']
         for ci, chop in enumerate(choppers):
             color = colors_chop[ci % len(colors_chop)]
-            for k in range(-2, int(t_plot_limit / PERIOD) + 2):
-                t_closed_start = (chop['left_edge_s'] + chop['opening_s'] + k * PERIOD) * 1e3
-                closed_width   = (PERIOD - chop['opening_s']) * 1e3
+            for k in range(-2, int(t_plot_limit / period) + 2):
+                t_closed_start = (chop['left_edge_s'] + chop['opening_s'] + k * period) * 1e3
+                closed_width   = (period - chop['opening_s']) * 1e3
                 ax1.add_patch(plt.Rectangle(
                     (t_closed_start, chop['l_chop'] - 0.08),
                     closed_width, 0.16,
@@ -331,8 +445,8 @@ class ChopperSimApp:
         if self._log_scale:
             ax2.set_yscale('log')
 
-        frame_ms = PERIOD * 1e3
-        n_frames = int(t_plot_limit / PERIOD) + 1
+        frame_ms = period * 1e3
+        n_frames = int(t_plot_limit / period) + 1
         for n in range(1, n_frames + 1):
             t_frame = n * frame_ms
             ax2.axvline(t_frame, color='black', ls='--', lw=0.8, alpha=0.5)

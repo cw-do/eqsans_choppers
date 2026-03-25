@@ -194,19 +194,22 @@ def fit_edge(x: np.ndarray, y: np.ndarray,
 
 
 CHOPPER_CONFIG = {
-    "1a": {"distance": 5.6978, "opening_deg": 129.600},
-    "1b": {"distance": 5.7078, "opening_deg": 129.600},
-    "2a": {"distance": 7.7978, "opening_deg": 180.000},
-    "2b": {"distance": 7.8078, "opening_deg": 180.000},
+    "1a": {"distance": 5.6601, "opening_deg": 129.600},
+    "1b": {"distance": 5.6758, "opening_deg": 129.600},
+    "2a": {"distance": 7.7601, "opening_deg": 180.000},
+    "2b": {"distance": 7.7758, "opening_deg": 180.000},
     "3a": {"distance": 9.4978, "opening_deg": 230.010},
     "3b": {"distance": 9.5078, "opening_deg": 230.007},
 }
 
 CHOPPER_NAMES = ["1a", "1b", "2a", "2b", "3a", "3b"]
 
-TOF_CONSTANT = 10.006  # µs·m / (mm·Å) — Planck/neutron-mass unit conversion
+TOF_CONSTANT = 10.006
 
 DEFAULT_IPTS = 37424
+
+FRAME_PERIOD_60HZ = 1e6 / 60.0
+FRAME_PERIOD_30HZ = 1e6 / 30.0
 
 
 @dataclass
@@ -367,15 +370,21 @@ def _patch_textbox(tb):
 
 class PhaseCalcWindow:
 
-    def __init__(self, on_load_callback: Optional[Callable[[LoadedSpectra], None]] = None):
+    def __init__(self, on_load_callback: Optional[Callable[[LoadedSpectra], None]] = None,
+                 mode_30hz: bool = False):
         import tkinter as tk
         self._tk = tk
         self.selected_chopper = "1a"
         self.on_load_callback = on_load_callback
         self.loaded_spectra: Optional[LoadedSpectra] = None
+        self.mode_30hz = mode_30hz
+        self.frame_period = FRAME_PERIOD_30HZ if mode_30hz else FRAME_PERIOD_60HZ
 
         self.root = tk.Toplevel()
-        self.root.title("Phase Offset Calculator")
+        title = "Phase Offset Calculator"
+        if mode_30hz:
+            title += "  [30 Hz MODE]"
+        self.root.title(title)
         self.root.resizable(False, False)
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
         self._alive = True
@@ -449,10 +458,10 @@ class PhaseCalcWindow:
         left_frame = tk.Frame(self.root)
         left_frame.grid(row=4, column=1, **PAD)
         tk.Button(left_frame, text="−", width=2, font=("", 9),
-                  command=lambda: self._shift_var(self._left_var, -16666.67)).pack(side="left")
+                  command=lambda: self._shift_var(self._left_var, -self.frame_period)).pack(side="left")
         tk.Entry(left_frame, textvariable=self._left_var, width=10).pack(side="left")
         tk.Button(left_frame, text="+", width=2, font=("", 9),
-                  command=lambda: self._shift_var(self._left_var, +16666.67)).pack(side="left")
+                  command=lambda: self._shift_var(self._left_var, +self.frame_period)).pack(side="left")
 
         tk.Label(self.root, text="Current offset",
                  font=("", 9)).grid(row=4, column=2, sticky="e", **PAD)
@@ -477,10 +486,10 @@ class PhaseCalcWindow:
         right_frame = tk.Frame(self.root)
         right_frame.grid(row=5, column=1, **PAD)
         tk.Button(right_frame, text="−", width=2, font=("", 9),
-                  command=lambda: self._shift_var(self._right_var, -16666.67)).pack(side="left")
+                  command=lambda: self._shift_var(self._right_var, -self.frame_period)).pack(side="left")
         tk.Entry(right_frame, textvariable=self._right_var, width=10).pack(side="left")
         tk.Button(right_frame, text="+", width=2, font=("", 9),
-                  command=lambda: self._shift_var(self._right_var, +16666.67)).pack(side="left")
+                  command=lambda: self._shift_var(self._right_var, +self.frame_period)).pack(side="left")
 
         tk.Label(self.root, text="Current offset",
                  font=("", 9)).grid(row=5, column=2, sticky="e", **PAD)
@@ -539,12 +548,12 @@ class PhaseCalcWindow:
             self._left_frame_var.set("+frame: —")
             return
         cfg = CHOPPER_CONFIG[self.selected_chopper]
-        half_open_tof = (cfg["opening_deg"] / 360.0) * 16666.67 / 2.0
+        half_open_tof = (cfg["opening_deg"] / 360.0) * self.frame_period / 2.0
         ogc = cfg["distance"] * left_edge / TOF_CONSTANT - half_open_tof
         phase_offset = cur_offset - ogc
         self._left_ogc_var.set(f"OGC: {ogc:.2f} µs")
         self._left_phase_var.set(f"Phase offset: {phase_offset:.2f} µs")
-        self._left_frame_var.set(f"+frame: {phase_offset + 16666.67:.2f} µs")
+        self._left_frame_var.set(f"+frame: {phase_offset + self.frame_period:.2f} µs")
 
     def _recalc_right(self):
         try:
@@ -556,12 +565,12 @@ class PhaseCalcWindow:
             self._right_frame_var.set("+frame: —")
             return
         cfg = CHOPPER_CONFIG[self.selected_chopper]
-        half_open_tof = (cfg["opening_deg"] / 360.0) * 16666.67 / 2.0
+        half_open_tof = (cfg["opening_deg"] / 360.0) * self.frame_period / 2.0
         ogc = cfg["distance"] * right_edge / TOF_CONSTANT + half_open_tof
         phase_offset = cur_offset - ogc
         self._right_ogc_var.set(f"OGC: {ogc:.2f} µs")
         self._right_phase_var.set(f"Phase offset: {phase_offset:.2f} µs")
-        self._right_frame_var.set(f"+frame: {phase_offset + 16666.67:.2f} µs")
+        self._right_frame_var.set(f"+frame: {phase_offset + self.frame_period:.2f} µs")
 
     def set_left_edge(self, value: float):
         self._left_var.set(f"{value:.2f}")
@@ -657,12 +666,14 @@ class EdgeFinderUI:
     def __init__(self, x: np.ndarray, y: np.ndarray,
                  window: float = 500.0,
                  filename: str = "",
-                 run_title: str = ""):
+                 run_title: str = "",
+                 mode_30hz: bool = False):
         self.x = x
         self.y = y
         self.window = window
         self.filename = filename
         self.run_title = run_title
+        self.mode_30hz = mode_30hz
 
         self.edge_guesses: List[float] = []
         self.edge_results: List[EdgeResult] = []
@@ -678,7 +689,8 @@ class EdgeFinderUI:
         self._log_scale: bool = False
         self._last_motion_time: float = 0.0
 
-        self.calc_window = PhaseCalcWindow(on_load_callback=self._on_spectra_loaded)
+        self.calc_window = PhaseCalcWindow(on_load_callback=self._on_spectra_loaded,
+                                           mode_30hz=mode_30hz)
         self.setup_figure()
 
     def _on_spectra_loaded(self, spectra: LoadedSpectra):
@@ -702,6 +714,8 @@ class EdgeFinderUI:
         self.ax.autoscale()
 
         title_line1 = 'Interactive Edge Finder'
+        if self.mode_30hz:
+            title_line1 += '  [30 Hz MODE]'
         if self.filename:
             title_line1 += '  |  ' + self.filename
         title_line2 = self.run_title if self.run_title else ''
@@ -728,6 +742,8 @@ class EdgeFinderUI:
         self.ax.set_xlabel('Time of Flight (µs)', fontsize=12)
         self.ax.set_ylabel('Intensity (counts)', fontsize=12)
         title_line1 = 'Interactive Edge Finder'
+        if self.mode_30hz:
+            title_line1 += '  [30 Hz MODE]'
         if self.filename:
             title_line1 += '  |  ' + self.filename
         title_line2 = self.run_title if self.run_title else ''
@@ -1146,8 +1162,16 @@ def main():
         default=500.0,
         help="Initial window size for fitting (default: 500 µs)"
     )
+    parser.add_argument(
+        "--30hz",
+        dest="mode_30hz",
+        action="store_true",
+        help="Enable 30 Hz mode (chopper period = 33333.33 µs instead of 16666.67 µs)"
+    )
     
     args = parser.parse_args()
+    
+    mode_str = "[30 Hz MODE]" if args.mode_30hz else "[60 Hz MODE]"
     
     if args.spectrum_file:
         spectrum_path = Path(args.spectrum_file)
@@ -1166,7 +1190,7 @@ def main():
             print(f"Title: {run_title}")
         print(f"Data range: TOF {x.min():.1f} - {x.max():.1f} µs, {len(x)} points")
         print("\n" + "="*60)
-        print("Interactive Edge Finder")
+        print(f"Interactive Edge Finder  {mode_str}")
         print("="*60)
         print("  Left-click on plot to add edge markers")
         print("  Right-click to remove nearest marker")
@@ -1175,10 +1199,11 @@ def main():
         print("  'r': set Right E of blade to current mouse X position")
         print("="*60 + "\n")
 
-        ui = EdgeFinderUI(x, y, window=args.window, filename=spectrum_path.name, run_title=run_title)
+        ui = EdgeFinderUI(x, y, window=args.window, filename=spectrum_path.name,
+                          run_title=run_title, mode_30hz=args.mode_30hz)
     else:
         print("="*60)
-        print("Interactive Edge Finder")
+        print(f"Interactive Edge Finder  {mode_str}")
         print("="*60)
         print("No file provided. Use IPTS/Run inputs in the Phase Calculator")
         print("window to load data from NeXus files.")
@@ -1192,7 +1217,8 @@ def main():
         
         x = np.array([0.0, 1.0])
         y = np.array([0.0, 0.0])
-        ui = EdgeFinderUI(x, y, window=args.window, filename="", run_title="")
+        ui = EdgeFinderUI(x, y, window=args.window, filename="", run_title="",
+                          mode_30hz=args.mode_30hz)
     
     ui.show()
 

@@ -1,5 +1,0 @@
-file save_restoreStatus.db
-{
-pattern {P}
-       {BL6:SavRst:ChopSkf4:}
-}

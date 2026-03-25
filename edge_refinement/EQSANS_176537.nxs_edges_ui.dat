@@ -1,0 +1,3 @@
+# Edge Detection Results (Interactive UI)
+# Columns: edge_num edge_type position position_err start end width amplitude
+1 rising 7335.4499 2.4172 7167.7388 7503.1609 101.9611 41168.3902
