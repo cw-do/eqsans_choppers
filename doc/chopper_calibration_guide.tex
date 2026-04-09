@@ -57,7 +57,7 @@ is critical for:
 \begin{itemize}
     \item Selecting the desired wavelength range
     \item Minimizing frame overlap from adjacent source pulses
-    \item Enabling frame-skip mode for extended wavelength coverage at 30\,Hz
+    \item Enabling frame-skipping mode for extended wavelength coverage at 30\,Hz
 \end{itemize}
 
 The calibration workflow involves two complementary approaches:
@@ -127,21 +127,21 @@ a 2.5\,\AA{} starting wavelength.
     \label{fig:diagram_60hz}
 \end{figure}
 
-\textbf{30\,Hz mode (frame-skip)}: Choppers rotate at 30\,Hz (period = 33,333\,$\mu$s), but the 
+\textbf{30\,Hz mode (frame-skipping)}: Choppers rotate at 30\,Hz (period = 33,333\,$\mu$s), but the 
 source still operates at 60\,Hz. This creates two wavelength bands per chopper cycle:
 \begin{itemize}
     \item \textbf{Band 1}: Neutrons from the ``current'' source pulse
     \item \textbf{Band 2}: Neutrons from the ``previous'' source pulse (16.67\,ms earlier)
 \end{itemize}
 
-Different choppers align to different pulses in frame-skip mode, enabling extended wavelength 
-coverage with a gap between bands. Figure~\ref{fig:diagram_30hz} illustrates the frame-skip 
+Different choppers align to different pulses in frame-skipping mode, enabling extended wavelength 
+coverage with a gap between bands. Figure~\ref{fig:diagram_30hz} illustrates the frame-skipping 
 configuration.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.95\textwidth]{figures/diagram_30hz.png}
-    \caption{Distance--time diagram for 30\,Hz frame-skip mode. Two distinct wavelength bands 
+    \caption{Distance--time diagram for 30\,Hz frame-skipping mode. Two distinct wavelength bands 
     are visible: Band~1 (2.5--6.1\,\AA{}) from the current pulse, and Band~2 (9.8--13.4\,\AA{}) 
     from the previous pulse. The choppers 1b and 3a align to the previous pulse while 2b and 3b 
     align to the current pulse, creating the characteristic dual-band pattern.}
@@ -335,7 +335,7 @@ extends to 33,333\,$\mu$s.
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.95\textwidth]{figures/find_edges_30hz_example.png}
-    \caption{Edge detection in 30\,Hz frame-skip mode. The extended TOF range (0--33,333\,$\mu$s) 
+    \caption{Edge detection in 30\,Hz frame-skipping mode. The extended TOF range (0--33,333\,$\mu$s) 
     captures the full chopper period. The fitted edge at 10,685\,$\mu$s corresponds to a 2.5\,\AA{} 
     reference measurement.}
     \label{fig:find_edges_30hz}
@@ -384,7 +384,7 @@ The simulator GUI consists of:
 Control & Description \\
 \midrule
 Detector distance & Physical distance from sample to detector (meters) \\
-Frequency (60/30 Hz) & Chopper rotation frequency; affects period and frame-skip behavior \\
+Frequency (60/30 Hz) & Chopper rotation frequency; affects period and frame-skipping behavior \\
 Chopper checkboxes & Enable/disable individual choppers in the simulation \\
 OGC ($\mu$s) & Opening Gap Center phase for each chopper \\
 Mech offset ($\mu$s) & Mechanical offset added to OGC (calibration correction) \\
@@ -404,7 +404,7 @@ account for encoder alignment, cable delays, and other instrument-specific facto
 When the \textbf{hexaSub phases} checkbox is enabled:
 \begin{enumerate}
     \item The simulator automatically sets mechanical offsets to compensate for hexaSub calibration
-    \item For 30\,Hz mode, additional frame-skip alignment corrections are applied
+    \item For 30\,Hz mode, additional frame-skipping alignment corrections are applied
     \item You can directly paste hexaSub OGC values into the OGC fields
 \end{enumerate}
 
@@ -434,7 +434,7 @@ Select \textbf{30 Hz} or \textbf{60 Hz} to match the chopper operating mode.
 
 \subsubsection{Step 2: Enable the Appropriate Choppers}
 
-For 30\,Hz frame-skip mode, enable choppers \textbf{1b, 2b, 3a, 3b} (the ``b-set'' plus 3a/3b).
+For 30\,Hz frame-skipping mode, enable choppers \textbf{1b, 2b, 3a, 3b} (the ``b-set'' plus 3a/3b).
 
 \subsubsection{Step 3: Enable hexaSub Phases}
 
@@ -617,7 +617,7 @@ This is $2 \times$ the 60\,Hz offsets because the chopper period doubles from 16
 
 \textbf{Wavelength bands}:
 
-hexaSub computes four wavelengths for frame-skip mode:
+hexaSub computes four wavelengths for frame-skipping mode:
 \begin{itemize}
     \item $\lambda_1$: Band 1 start (user-requested wavelength)
     \item $\lambda_2 = \lambda_1 + \Delta\lambda_{60\text{Hz}}$: Band 1 end
@@ -656,13 +656,13 @@ phase = tof - 1.0/60.0;  // Always subtract, regardless of tof value
 phase = tof - 1.0/60.0;  // Always subtract
 \end{verbatim}
 
-This creates the frame-skip behavior where Band 2 neutrons (longer wavelengths) from the 
+This creates the frame-skipping behavior where Band 2 neutrons (longer wavelengths) from the 
 \emph{previous} source pulse arrive at the detector in the same time window as Band 1 neutrons 
 from the \emph{current} pulse.
 
-\textbf{Simulator frame-skip corrections}:
+\textbf{Simulator frame-skipping corrections}:
 
-When using hexaSub phases in the simulator (checkbox enabled), frame-skip alignment 
+When using hexaSub phases in the simulator (checkbox enabled), frame-skipping alignment 
 corrections are applied only for choppers 3a and 3b:
 \begin{itemize}
     \item 3a: $+33333.33$\,$\mu$s (full 30\,Hz period)
@@ -766,7 +766,7 @@ The simulator reverses hexaSub's operations to recover physical timing for ray-t
 
 \begin{enumerate}
     \item \textbf{Subtract calibration offset}: Removes the hardware-specific phase offset
-    \item \textbf{Add frame-skip corrections} (30\,Hz only): Compensates for period wrapping
+    \item \textbf{Add frame-skipping corrections} (30\,Hz only): Compensates for period wrapping
     \item \textbf{Ray-trace}: Simulates neutron paths through all enabled choppers
 \end{enumerate}
 
