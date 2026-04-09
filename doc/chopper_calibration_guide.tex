@@ -233,6 +233,8 @@ The interface consists of two windows (Figure~\ref{fig:find_edges_ui}):
 
 \subsection{Keyboard Shortcuts and Controls}
 
+Table~\ref{tab:shortcuts} lists the interactive controls for the edge finder.
+
 \begin{table}[h]
 \centering
 \caption{Interactive Controls}
@@ -327,7 +329,7 @@ Press \texttt{s} to save:
     \item PNG image of the spectrum with fitted edges
 \end{itemize}
 
-\subsection{Example: 30\,Hz Frame-Skip Mode}
+\subsection{Example: 30\,Hz Frame-Skipping Mode}
 
 Figure~\ref{fig:find_edges_30hz} shows edge detection in 30\,Hz mode, where the frame period 
 extends to 33,333\,$\mu$s.
@@ -374,6 +376,8 @@ The simulator GUI consists of:
 \end{itemize}
 
 \subsection{Control Panel Elements}
+
+Table~\ref{tab:sim_controls} describes the simulator controls.
 
 \begin{table}[h]
 \centering
@@ -538,7 +542,7 @@ phase_offset[] = {0, 14954.46, 14805.4, 14726.06, 14565.69, 15072.89, 14834.04}
 
 \textbf{Wavelength-dependent alignment (critical)}:
 
-The 60\,Hz mode has \emph{different} alignment logic depending on whether $\lambda_1 > 13$\,\AA{}:
+The 60\,Hz mode has \emph{different} alignment logic depending on whether $\lambda_1 > 13$\,\AA{}, as shown in Table~\ref{tab:60hz_alignment}:
 
 \begin{table}[h]
 \centering
@@ -598,7 +602,7 @@ For $\lambda_1 \leq 13$\,\AA{} (most common):
 \text{phase}_{3\text{b}} &= \text{TOF}(\lambda_1) + \theta_{\text{open}} \times t_{\text{half}} + \text{offset} \quad \text{(opening edge)}
 \end{align}
 
-\subsubsection{30\,Hz Frame-Skip Mode}
+\subsubsection{30\,Hz Frame-Skipping Mode}
 
 In 30\,Hz mode, choppers rotate at half speed, allowing two source pulses to contribute per 
 chopper period. This creates \emph{two} wavelength bands. Only choppers 1b, 2b, 3a, 3b are used 
@@ -627,7 +631,7 @@ hexaSub computes four wavelengths for frame-skipping mode:
 
 \textbf{Pulse alignment (critical)}:
 
-Different choppers align to \emph{different} source pulses:
+Different choppers align to \emph{different} source pulses, as detailed in Table~\ref{tab:30hz_alignment}:
 
 \begin{table}[h]
 \centering
@@ -692,6 +696,8 @@ Unlike the 60\,Hz standard mode, monochromatic mode has \emph{no} wavelength-dep
     \item \textbf{All ``b'' choppers} (1b, 2b, 3b): Closing edge aligned to $\lambda_{\max}$
 \end{itemize}
 
+Table~\ref{tab:mono_alignment} summarizes the edge alignment for monochromatic mode.
+
 \begin{table}[h]
 \centering
 \caption{Monochromatic Mode Edge Alignment}
@@ -742,13 +748,15 @@ Chopper & hexaSub OGC ($\mu$s) \\
 
 \subsubsection{Summary: Mode Comparison}
 
+Table~\ref{tab:mode_comparison} summarizes the key differences between the three hexaSub operating modes.
+
 \begin{table}[h]
 \centering
 \caption{Comparison of hexaSub Operating Modes}
 \label{tab:mode_comparison}
 \begin{tabular}{lccc}
 \toprule
-Feature & 60\,Hz Standard & 30\,Hz Frame-Skip & Monochromatic \\
+Feature & 60\,Hz Standard & 30\,Hz Frame-Skipping & Monochromatic \\
 \midrule
 Chopper speed & 60\,Hz & 30\,Hz & 60\,Hz \\
 Choppers used & 4 (1a/b, 2a/b or 3a/b) & 4 (1b, 2b, 3a, 3b) & 6 (all) \\
@@ -791,7 +799,7 @@ allowing direct use of OGC values from hexaSub.
     \item The average offset indicates the calibration correction needed
 \end{enumerate}
 
-\subsection{Example 2: Verifying 30\,Hz Frame-Skip Configuration}
+\subsection{Example 2: Verifying 30\,Hz Frame-Skipping Configuration}
 
 \textbf{Goal}: Confirm that hexaSub phases for 2.5\,\AA{} @ 30\,Hz produce the expected bands.
 
