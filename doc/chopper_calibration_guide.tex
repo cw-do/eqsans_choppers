@@ -554,8 +554,35 @@ $\lambda_1 \leq 13$\,\AA{} & Closing & $\lambda_2$ & Opening & $\lambda_1$ \\
 \end{tabular}
 \end{table}
 
-This swap prevents neutron leakage at different wavelength ranges. The choppers 3a and 3b do 
-\emph{not} swap:
+This swap prevents neutron leakage at different wavelength ranges.
+
+\textbf{Origin of the 13\,\AA{} threshold}:
+
+The 13\,\AA{} threshold is a hardcoded, empirically-determined constant in \texttt{hexaSub.c}. It is \emph{not} calculated from physical parameters---it was determined through testing and simulation to identify the crossover point where one alignment strategy becomes preferable to the other.
+
+In the \texttt{calc6Phases()} function (around line 373 of \texttt{bl6chopper\_src/hexaSub.c}), the logic is:
+
+\begin{verbatim}
+/* we align the chopper differently between wl[1]>13 and wl[1]<=13
+ * to stop leaks.  */
+if (wl[1] > 13) {
+    /* chopper 1A/1B: opening edge aligned to wl[1] (band start)
+     * chopper 2A/2B: closing edge aligned to wl[2] (band end) */
+} else {
+    /* chopper 1A/1B: closing edge aligned to wl[2] (band end)
+     * chopper 2A/2B: opening edge aligned to wl[1] (band start) */
+}
+\end{verbatim}
+
+The physical reason for the swap relates to how chopper opening times interact with neutron TOF across different wavelength ranges:
+\begin{itemize}
+    \item At \emph{short wavelengths} ($\leq$13\,\AA{}), neutrons arrive quickly. Aligning choppers 1a/1b to the \emph{closing} edge of $\lambda_2$ better defines the long-wavelength cutoff and prevents frame overlap.
+    \item At \emph{long wavelengths} ($>$13\,\AA{}), neutrons arrive later in the frame. Aligning choppers 1a/1b to the \emph{opening} edge of $\lambda_1$ better isolates the band from adjacent pulses.
+\end{itemize}
+
+The value 13\,\AA{} is approximately where the chopper opening time equals one half of the 60\,Hz frame period when accounting for the 1a/1b chopper distance ($\sim$5.67\,m). This crossover determines which alignment strategy minimizes neutron leakage.
+
+The choppers 3a and 3b do \emph{not} swap:
 \begin{itemize}
     \item \textbf{3a}: Closing edge always aligned to $\lambda_2$ (band end)
     \item \textbf{3b}: Opening edge always aligned to $\lambda_1$ (band start)
